@@ -41,6 +41,22 @@ From the dataset we see only 5% of the games end in draws; this actually pretty 
 
 ## Preprocessing Approach
 
+### Splitting the data
+
+We split the with the 80/10/10 approach.
+- we drop the target column winner from the df
+- we use the method `train_test_split` of the scikit-learn library
+- caution needed for the few rows where we have the value "draw" in our target; for this we use `stratify`.
+
+The results for the splitting process are as follows
+
+| Set |  Number of rows (percentage on df rows) | Draw Percentage |
+| --- | ---------------------------- | --------------- |
+| Training set  | 16046 rows (80%) | 4.74% |
+| Validation set| 2006 rows (10%) | 4.74% | 
+| Test set      | 2006 rows (10%) | 4.74%|
+
+
 ## Feature Engineering
 
 ## PCA Insights
