@@ -36,7 +36,7 @@ Predict the winner of a chess game.
 | opening_name |Categorical|Human-readable opening name|High cardinality |
 | opening_ply  | Numerical | Length of the opening sequence | Number of theoretical moves -  sticking to theory leads to more balanced games positionally and games could go on more |
 
-- The goal is to predict the _winner_ of the game (or if it was a draw).
+- The goal is to predict the _winner_ of the game: white - black - draw.
 
 From the dataset we see only 5% of the games end in draws; this actually pretty normal due to the nature of online chess with beginners and intermediate players.
 
@@ -80,6 +80,14 @@ _Notes_:
     for df in [X_train, X_validation, X_test]:
         df[cat_cols] = df[cat_cols].astype("object")
     ```
+
+### Outlier Detection and Treatment
+
+We adopt the IQR method since it is more appropriate for the data, as they are not uniformly distributed (bell curve).
+
+The detection of the outlier are applied to the numerical features, except "*created_at*" and "*last_move_at*". The values of these columns are "massive" integers and are used as timestamps; timestamps represent specific points in history. Capping them to a median "date" doesn't make physical sense for a model and therefore we convert them to duration later in the preprocessing.
+
+After the detection of the outliers we "Winsorize" the outliers rather than remove them. We follow this strategy as  to preserve the integrity of the Validation and Test sets. In a real-world scenario, if a user inputs a highly unusual 250-turn game, the model cannot simply 'drop' the user's request; it should provide a prediction. By capping, we train the model to treat extreme outliers as simply 'very high' values without allowing them to distort the mathematical weights of the Neural Network.
 
 ## Feature Engineering
 

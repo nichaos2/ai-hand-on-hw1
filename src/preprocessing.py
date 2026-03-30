@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 
-import kagglehub
+import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
@@ -101,8 +101,6 @@ def handle_missing_values(X_train, X_validation, X_test, y_train, y_validation, 
         "opening_ply",
         "created_at",
         "last_move_at",
-        # "base_time_mins",
-        # "increment_secs",
     ]
     cat_cols = [col for col in X_train.columns if col not in num_cols]
     # Force mixed types into pure Python objects to avoid error for the column opening_eco
@@ -135,11 +133,46 @@ def handle_missing_values(X_train, X_validation, X_test, y_train, y_validation, 
     return (X_train, X_validation, X_test, y_train, y_validation, y_test)
 
 
-def download_dataset():
-    # TODO add logic if dataset exists
-    kagglehub.dataset_download(
-        "datasnaek/chess",
-        path=DATASET_PATH,
-    )
+def detect_treat_outliers_iqr(X_train, X_validation, X_test):
+    """
+    Learns IQR boundaries from the Training set only,
+    and applies capping (Winsorization) to Train, Val, and Test sets.
+    """
+    # Define the continuous numerical columns to check
+    # Note: We do NOT do this to categorical encoded data or IDs!
+    features_to_cap = ["turns", "white_rating", "black_rating", "opening_ply"]
 
-    print("Path to dataset files:", DATASET_PATH)
+    # We will store the boundaries just in case we need to inspect them
+    boundaries = {}
+
+    for col in features_to_cap:
+        # Compute boundaries on TRAIN only top prevent data leakage
+        Q1 = X_train[col].quantile(0.25)
+        Q3 = X_train[col].quantile(0.75)
+        IQR = Q3 - Q1
+
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+
+        # Save the rules for our records
+        boundaries[col] = {"lower": lower_bound, "upper": upper_bound}
+
+        # 2. TRANSFORM ALL SETS (Capping / Winsorizing)
+        # np.clip forces values outside the range to equal the boundary exactly
+        X_train[col] = np.clip(X_train[col], lower_bound, upper_bound)
+        X_validation[col] = np.clip(X_validation[col], lower_bound, upper_bound)
+        X_test[col] = np.clip(X_test[col], lower_bound, upper_bound)
+
+    # print("Outliers successfully capped using Train-set IQR boundaries!")
+    return X_train, X_validation, X_test
+
+
+# def download_dataset():
+#     import kagglehub
+#     # TODO add logic if dataset exists
+#     kagglehub.dataset_download(
+#         "datasnaek/chess",
+#         path=DATASET_PATH,
+#     )
+
+#     print("Path to dataset files:", DATASET_PATH)
