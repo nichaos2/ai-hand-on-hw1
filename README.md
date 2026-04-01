@@ -1,11 +1,11 @@
 # AI Hands-on Assignement 1
 
 
-## Problem Description
+## 1. Problem Description
 
 Predict the winner of a chess game.
 
-## Dataset Description
+## 2. Dataset Description
 
 - Domain: Chess
 - Source [URL](https://wwwkagglecom/datasets/datasnaek/chess)
@@ -20,7 +20,7 @@ Predict the winner of a chess game.
 | Feature Name | Type | Description | Note |
 | ------------ | ---- | ----------- | ---- |
 | id           | Categorical | Unique game identifier | unique identifier - **drop** for ML |
-| rated        | Boolean | True if the game affects player ratings | categorical feature |
+| rated        | Categorical - Boolean | True if the game affects player ratings | categorical feature |
 | created_at   | Numerical | Unix timestamp (start time)| conversion to datetime - difference with last_move_at|
 | last_move_at | Numerical | Unix timestamp (end time)| conversion to datetime - difference with  created_at (if the game finished late at night mate in one could arrive due to fatigue ) |
 | turns       | Numerical | Number of moves played| indicator for likelihood of mate in early stages - "hanging mate in one"|
@@ -42,7 +42,7 @@ From the dataset we see only 5% of the games end in draws; this actually pretty 
 
 _Note_: the columns notes above are dropped during the loading of teh dataset. The approach of the target to be picked out of two columns (winner+victory_status) seems really attractive, but it is left out for now for the sake of time limitations (but will be revisited)
 
-## Preprocessing Approach
+## 3. Preprocessing Approach
 
 ### Splitting the data
 
@@ -85,16 +85,61 @@ _Notes_:
 
 We adopt the IQR method since it is more appropriate for the data, as they are not uniformly distributed (bell curve).
 
-The detection of the outlier are applied to the numerical features, except "*created_at*" and "*last_move_at*". The values of these columns are "massive" integers and are used as timestamps; timestamps represent specific points in history. Capping them to a median "date" doesn't make physical sense for a model and therefore we convert them to duration later in the preprocessing.
+The detection of the outlier are applied to the following numerical features:
+- turns
+- white_rating
+- black_rating
+- opening_ply
+
+The numerical features "*created_at*" and "*last_move_at*" are not treated in the outlier detection process. The values of these columns are "massive" integers and are used as timestamps; timestamps represent specific points in history. Capping them to a median "date" doesn't make physical sense for a model and therefore we convert them to duration later in the preprocessing.
 
 After the detection of the outliers we "Winsorize" the outliers rather than remove them. We follow this strategy as  to preserve the integrity of the Validation and Test sets. In a real-world scenario, if a user inputs a highly unusual 250-turn game, the model cannot simply 'drop' the user's request; it should provide a prediction. By capping, we train the model to treat extreme outliers as simply 'very high' values without allowing them to distort the mathematical weights of the Neural Network.
 
-## Feature Engineering
+### Encoding Categorical Variables
 
-## PCA Insights
+The encoding method depends on the nature of the categorical variables:
+- rated: boolean (True-False)
+- victory status, it gives away the result if draw - dropped (although the result in a win would be a good feature to train upon.)
+- winner is the target (3 labels)
+- increment_code : high cardinality, a lot of game formats
+- opening_eco: high cardinality 
+- opening_name: high cardinality
 
-## Model Comparison
+#### One-hot encoding
 
-## Best Model Designation
+Ideal for the target which has values "white", "black" and "draw".
 
-## Installation and Execution
+Because it is in the target, the output from the encoding process will give as an array of 0s 1s and 2s.
+
+#### Label encoding
+
+Ideal for the rated, which is True or False, so it will be 1 or 0.
+
+#### Target endoding
+
+Target encoding basically calculates a possibility based on the target, so we will have 3 new columns for each categorical features with high cardinality.
+
+Problems to overcome with the Targer encoding: overfitting, never seen categories in new datasets. 
+
+We use the `TargetEncoder` class of the `scikit-learn` library. A very good description of how the class works can be found [here](https://towardsdatascience.com/encoding-categorical-variables-a-deep-dive-into-target-encoding-2862217c2753/). `scikit-learn` and `feature-engine` can automatically detect the optimal smoothing parameter using empirical Bayes variance estimates. To avoid data leakage we use `shuffle` and thus we set the `random_state` parameter to 42, as specified in the exercise.
+
+_Note 1_ : This could be a good time to break the feature "*increament_code*" in two different numerical features "*base_time_mins*" and "*added_times_secs*"; this way any new time format that comes with a new dataset will be taken care by the model.
+
+_Note 2_: the features "*opening_name*" and "*opening_eco*" have conceptually high correlation; e.g. the value D10 of the opening eco always related to the opening name "Slav defence" + some variation. However, there might be a case where opening name "Slav defence" + some other variation, does not relate to D10. (ecos and names are just for example). It might seem that we could drop one of those features as it does not give much more info. This is a coming topic on the PCA analysis.
+
+
+## 4. Feature Engineering
+
+Date/Time: The timestamps are in milliseconds; you'll need to calculate "Game Duration."
+Categorical Encoding: Converting opening_eco or rated into numbers.
+Scaling: Normalizing ratings (which range from 800 to 2700) so the Neural Network doesn't get overwhelmed by large numbers.
+
+## 5. Feature Scaling
+
+## 6. PCA Insights
+
+## 7. Model Comparison
+
+## 8. Best Model Designation
+
+## 9. Installation and Execution
