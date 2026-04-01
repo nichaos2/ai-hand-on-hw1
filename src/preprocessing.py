@@ -1,15 +1,17 @@
 # All preprocessing logic
 import os
+import pickle
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, TargetEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler, TargetEncoder
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATASET_PATH = os.path.join(BASE_DIR, "data", "dataset.csv")
+SCALER_PATH = os.path.join(BASE_DIR, "models", "scaler.pkl")
 
 
 def load_data() -> pd.DataFrame:
@@ -67,14 +69,7 @@ def split_data(df):
         stratify=y_temp,
     )
 
-    return (
-        X_train,
-        X_validation,
-        X_test,
-        y_train,
-        y_validation,
-        y_test,
-    )
+    return (X_train, X_validation, X_test, y_train, y_validation, y_test)
 
 
 def handle_missing_values(X_train, X_validation, X_test, y_train, y_validation, y_test):
@@ -220,6 +215,169 @@ def encode_categories(X_train, X_validation, X_test, y_train, y_val, y_test):
         y_test_enc,
     )
 
+
+def engineer_domain_features(X_train, X_validation, X_test):
+    """
+    Creates new domain-knowledge features and adds them alongside
+    the original columns without dropping anything.
+    """
+    datasets = [X_train, X_validation, X_test]
+
+    for X in datasets:
+        # --- Feature 1: Rating Advantage ---
+        X["rating_advantage"] = X["white_rating"] - X["black_rating"]
+
+        # --- Feature 2: Game Duration (Minutes) ---
+        # Convert the massive Unix millisecond integers to datetime objects
+        start_dt = pd.to_datetime(X["created_at"], unit="ms")
+        end_dt = pd.to_datetime(X["last_move_at"], unit="ms")
+
+        # Calculate the difference and convert to total minutes
+        X["game_duration_mins"] = (end_dt - start_dt).dt.total_seconds() / 60
+
+    return X_train, X_validation, X_test
+
+
+def fix_zero_durations(X_train, X_validation, X_test):
+    """
+    Treats physically impossible 0-minute games as missing data
+    and imputes them using the Training set's median duration.
+    """
+    # 1. Find the median duration in the Training set ONLY
+    # We explicitly ignore the 0s so they don't drag the median down!
+    valid_train_durations = X_train[X_train["game_duration_mins"] > 0][
+        "game_duration_mins"
+    ]
+    median_duration = valid_train_durations.median()
+
+    # 2. Replace the zeros with this median in all three sets
+    for X in [X_train, X_validation, X_test]:
+        # Wherever the duration is exactly 0, replace it with the median
+        mask = X["game_duration_mins"] == 0
+        X.loc[mask, "game_duration_mins"] = median_duration
+
+    # print(f"Replaced 0-minute games with the Train median duration: {median_duration:.2f} mins")
+    return X_train, X_validation, X_test
+
+
+def fix_zero_durations_grouped(X_train, X_validation, X_test):
+    """
+    Imputes 0-minute games using the median duration of their specific time control.
+    """
+    # 1. Look ONLY at valid durations in the Training set
+    valid_train = X_train[X_train["game_duration_mins"] > 0]
+
+    # 2. Calculate the global median (as a safety fallback)
+    global_median = valid_train["game_duration_mins"].median()
+
+    # 3. Calculate the grouped medians
+    # This creates a mapping like {"10+0": 14.5, "5+0": 6.2, "60+0": 58.1}
+    grouped_medians = valid_train.groupby("increment_code")[
+        "game_duration_mins"
+    ].median()
+
+    # 4. Apply the fix to all three datasets
+    for X in [X_train, X_validation, X_test]:
+        # Find exactly which rows have the 0s
+        zero_mask = X["game_duration_mins"] == 0
+
+        # Take the increment_code for those zero-rows, and map them to our grouped_medians
+        # .fillna(global_median) handles any unknown formats in Val/Test!
+        imputed_values = (
+            X.loc[zero_mask, "increment_code"]
+            .map(grouped_medians)
+            .fillna(global_median)
+        )
+
+        # Inject the smart values back into the column
+        X.loc[zero_mask, "game_duration_mins"] = imputed_values
+
+    print("Zero-duration games successfully imputed using grouped time controls!")
+    return X_train, X_validation, X_test
+
+
+def scale_features_and_save(X_train, X_validation, X_test):
+    """
+    Fits a StandardScaler on the training numerical features,
+    applies it to all sets, and saves the scaler to disk.
+    """
+    # 1. Define the continuous numerical columns that need scaling
+    cols_to_scale = [
+        "turns",
+        "white_rating",
+        "black_rating",
+        "opening_ply",
+        "created_at",
+        "last_move_at",
+        "rating_advantage",
+        "game_duration_mins",
+    ]
+
+    # 2. Initialize the Scaler
+    scaler = StandardScaler()
+
+    # 3. FIT ON TRAINING SET ONLY
+    # This learns the mean and variance from the training data
+    scaler.fit(X_train[cols_to_scale])
+
+    # 4. TRANSFORM ALL SETS
+    # We use .copy() to avoid SettingWithCopyWarning in pandas
+    X_train_scaled = X_train.copy()
+    X_val_scaled = X_validation.copy()
+    X_test_scaled = X_test.copy()
+
+    X_train_scaled[cols_to_scale] = scaler.transform(X_train[cols_to_scale])
+    X_val_scaled[cols_to_scale] = scaler.transform(X_validation[cols_to_scale])
+    X_test_scaled[cols_to_scale] = scaler.transform(X_test[cols_to_scale])
+
+    # 5. SAVE THE FITTED SCALER FOR HOMEWORK 2
+    with open(SCALER_PATH, "wb") as file:
+        pickle.dump(scaler, file)
+
+    print(f"Features scaled successfully. Scaler saved to {SCALER_PATH}")
+
+    return X_train_scaled, X_val_scaled, X_test_scaled
+
+
+def preprocess():
+
+    df = load_data()
+    (X_train, X_validation, X_test, y_train, y_val, y_test) = split_data(df=df)
+
+    #
+    (X_train, X_validation, X_test, y_train, y_validation, y_test) = (
+        handle_missing_values(X_train, X_validation, X_test, y_train, y_val, y_test)
+    )
+
+    #
+    X_train, X_validation, X_test = detect_treat_outliers_iqr(
+        X_train, X_validation, X_test
+    )
+
+    # we change the steps to engineer the domain features before the encoding in our case
+    X_train, X_validation, X_test = engineer_domain_features(
+        X_train, X_validation, X_test
+    )
+
+    # intermediate step to treat the "wrong" output for
+    X_train, X_validation, X_test = fix_zero_durations_grouped(
+        X_train, X_validation, X_test
+    )
+
+    X_train, X_validation, X_test, y_train, y_val, y_test = encode_categories(
+        X_train, X_validation, X_test, y_train, y_val, y_test
+    )
+
+    X_train, X_validation, X_test = scale_features_and_save(
+        X_train, X_validation, X_test
+    )
+
+    return X_train, X_validation, X_test, y_train, y_val, y_test
+
+
+if __name__ == "__main__":
+    preprocess()
+    print("Preprocessing DONE")
 
 # def download_dataset():
 #     import kagglehub
