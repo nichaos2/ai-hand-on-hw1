@@ -2,11 +2,11 @@
 
 from src.preprocessing import (
     detect_treat_outliers_iqr,
+    encode_categories,
     handle_missing_values,
     load_data,
     split_data,
 )
-from src.utils import check_test_data
 
 if __name__ == "__main__":
     print("-" * 10)
@@ -36,5 +36,14 @@ if __name__ == "__main__":
         X_train, X_validation, X_test
     )
 
+    print(X_train.head())
+    print(type(y_train))
+
     #
-    check_test_data(df, X_train, X_validation, X_test, y_train, y_val, y_test)
+    # check_test_data(df, X_train, X_validation, X_test, y_train, y_val, y_test)
+
+    X_train, X_validation, X_test, y_train, y_val, y_test = encode_categories(
+        X_train, X_validation, X_test, y_train, y_val, y_test
+    )
+    print(X_train.head())
+    print(type(y_train))
