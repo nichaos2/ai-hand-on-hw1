@@ -117,7 +117,7 @@ Ideal for the rated, which is True or False, so it will be 1 or 0.
 
 #### Target endoding
 
-Target encoding basically calculates a possibility based on the target, so we will have 3 new columns for each categorical features with high cardinality.
+Target encoding basically calculates a possibility based on the target, so we will have 3 new columns for each categorical features with high cardinality. So after the encoding we have 16 columns.
 
 Problems to overcome with the Targer encoding: overfitting, never seen categories in new datasets. 
 
@@ -130,11 +130,21 @@ _Note 2_: the features "*opening_name*" and "*opening_eco*" have conceptually hi
 
 ## 4. Feature Engineering
 
-Date/Time: The timestamps are in milliseconds; you'll need to calculate "Game Duration."
-Categorical Encoding: Converting opening_eco or rated into numbers.
-Scaling: Normalizing ratings (which range from 800 to 2700) so the Neural Network doesn't get overwhelmed by large numbers.
+The two features that can encode domain knowledge is the duration of a game and the difference between rated player.
+
+- "last_move_at" - "created_at": The format is in Unix timestamps we will convert to Date/Time and then to minutes
+- "white_rating" - "black_rating": is the differnce between the capabilities between the playes; a higher rated player will most probably win, and this is much more visible when the difference is very high. It is unlikely that a 500 player will win a 1500 player. However, it is not unlikely for a player of 2200 to win a player of 2300.
+
+_Note_: due to the early format of the output in the dataset, in some rows, the time features "created_at" and "last_move_at" have the same value, and thus we get a "game_duration_mins" = 0. To that end we create a function to fix this 0 and set it to the median of the durations.
+
+_Note 2_: however the duration can be more precisely "guessed" at the preprocessing by looking at the feature "increment_code", because a "5+2" game would have a duration of 5-8 minutes (median) and a "10+5" game probably a duration of 11-15. So it would be advantageous to have a median grouped by the feature "increment_code" and then drop the feature. This step takes place before encoding the categorical features. This step can be done before the encoding in our case.
+
 
 ## 5. Feature Scaling
+
+The basic idea of the scaling is normalizing ratings (which range from 800 to 2700), and the date related features "created_at" and "last_move_at" so the Neural Network doesn't get overwhelmed by large numbers.
+
+We select the `StandardScaler` to scale the numerical features, because we already treated our extreme outliers using the IQR capping method (Winsorization) in the previous step. Thus, a `RobustScaler` is no longer necessary. The `StandardScaler` transforms the features to have a mean of 0 and a standard deviation of 1 using the formula $z = \frac{x - \mu}{\sigma}$. This is the preferred method for Neural Networks, ensuring that massively scaled columns like created_at or white_rating do not artificially dominate smaller scaled columns like "turns" or "opening_ply".
 
 ## 6. PCA Insights
 
