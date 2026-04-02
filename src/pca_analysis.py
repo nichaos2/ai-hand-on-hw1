@@ -10,6 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 IMAGE_PATH = os.path.join(BASE_DIR, "images")
 SCREE_PLOT_PATH = os.path.join(IMAGE_PATH, "scree_plot.png")
 SCATTER_PLOT_PATH = os.path.join(IMAGE_PATH, "scatter_plot.png")
+PCA_FEATURES_PATH = os.path.join(IMAGE_PATH, "pca_features.txt")
 
 
 def run_pca_exploration(X_train_scaled, y_train_enc):
@@ -71,6 +72,12 @@ def run_pca_exploration(X_train_scaled, y_train_enc):
     print("\n--- Top Features driving Principal Component 2 (PC2) ---")
     print(loadings["PC2"].abs().sort_values(ascending=False).head(5))
 
+    with open(PCA_FEATURES_PATH, "w") as f:
+        f.write("--- Top Features driving Principal Component 1 (PC1) ---")
+        f.write(str(loadings["PC1"].abs().sort_values(ascending=False).head(5)))
+        f.write("\n--- Top Features driving Principal Component 2 (PC2) ---")
+        f.write(str(loadings["PC2"].abs().sort_values(ascending=False).head(5)))
+
     # ==========================================
     # TASK 3: 2D SCATTER PLOT (Projected Data)
     # ==========================================
@@ -98,8 +105,3 @@ def run_pca_exploration(X_train_scaled, y_train_enc):
     plt.tight_layout()
     plt.show()
     plt.savefig(SCATTER_PLOT_PATH)
-
-
-# --- EXECUTION ---
-# Run this using the scaled data from your previous step!
-# run_pca_exploration(X_train_scaled, y_train_enc)

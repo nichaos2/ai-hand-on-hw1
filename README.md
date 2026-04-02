@@ -148,15 +148,21 @@ We select the `StandardScaler` to scale the numerical features, because we alrea
 
 ## 6. PCA Insights
 
+We run a PCA Analysis with the purpose of understanding which features carry the most information and how much variance each principal component explains. 
+
+To this end, as the goal here is not to reduce dimensions for modelling, the code for PCA analysis is not in the code `preprocessing.py` but a standalone script in the `src` folder `pca_analysis.py`.
+
+When the `main.py` run after the preprocessing, two images and one text file are produced in the images folder (not coherent as a text file is in there too, but it will do for the analysis). The results from the images and the text file are commneted in the following sections
+
 ### Scree plot
 
 <img src="./images/scree_plot.png" style="width:700px"/>
 
-The scree plot reveals that the dataset's variance is relatively distributed across multiple dimensions. It requires 6 principal components to capture 90% of the total cumulative variance. This indicates that a chess game is a complex, multi-dimensional event; the data cannot be aggressively compressed into just 2 or 3 features without losing highly significant information.
+As we see in the image of the file "/images/scree_plot.png", the scree plot reveals that the dataset's variance is relatively distributed across multiple dimensions. It requires 6 principal components to capture 90% of the total cumulative variance. This indicates that a chess game is a complex, multi-dimensional event; the data cannot be aggressively compressed into just 2 or 3 features without losing highly significant information.
 
 ### PCA loadings
 
-Number of components needed to explain 90% of variance: 6
+The content in the file /images/pca_features.txt reveals the number of components needed to explain 90% of variance which are 6 in our case.
 
 Top Features driving Principal Component 1 (PC1)
 
@@ -182,12 +188,11 @@ By inspecting the component weights (loadings), we can interpret the real-world 
 - PC2 is driven by the exact same set of features, but with a slightly heavier emphasis on the ratings over the timestamps.
 - The fact that the highly correlated timestamps dominated the primary axes of variance validates our earlier feature engineering decision to extract game_duration_mins. In a strict dimensionality reduction scenario, the raw timestamps would likely be dropped to prevent them from overwhelming the principal components.
 
-
 ### PC1 - PC2 scatter plot
 
 <img src="./images/scatter_plot.png" style="height:500px"/>
 
-The data was projected onto a 2D scatter plot using PC1 and PC2, colored by the target class (Winner). The plot displays a dense, heavily overlapping cloud of data points with no distinct clusters or linear boundaries between the classes. Because PC1 and PC2 primarily represent the duration of the game and Skill Level (Rating) of the players which are factors that dictate the environment of the game rather than the outcome, it is mathematically logical that they do not perfectly separate the winner. This confirms that predicting the outcome of a chess game is a highly non-linear classification problem that will require an algorithm capable of learning complex, higher-dimensional interactions (such as a Random Forest or Neural Network).
+The data was projected onto a 2D scatter plot using PC1 and PC2, colored by the target class (Winner). The plot in the file "image/scatter_plot.png" displays a dense, heavily overlapping cloud of data points with no distinct clusters or linear boundaries between the classes. Because PC1 and PC2 primarily represent the duration of the game and Skill Level (Rating) of the players which are factors that dictate the environment of the game rather than the outcome, it is mathematically logical that they do not perfectly separate the winner. This confirms that predicting the outcome of a chess game is a highly non-linear classification problem that will require an algorithm capable of learning complex, higher-dimensional interactions (such as a Random Forest or Neural Network).
 
 
 ## 7. Model Comparison

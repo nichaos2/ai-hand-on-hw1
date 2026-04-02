@@ -1,0 +1,12 @@
+--- Top Features driving Principal Component 1 (PC1) ---last_move_at    0.555886
+created_at      0.555885
+black_rating    0.391142
+white_rating    0.362634
+opening_ply     0.253568
+Name: PC1, dtype: float64
+--- Top Features driving Principal Component 2 (PC2) ---white_rating    0.549390
+black_rating    0.458896
+created_at      0.427984
+last_move_at    0.427976
+opening_ply     0.288961
+Name: PC2, dtype: float64
