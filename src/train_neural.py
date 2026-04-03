@@ -9,6 +9,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
+torch.manual_seed(42)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_PATH = os.path.join(BASE_DIR, "models", "neural_network.pt")
 INSIGHTS_PATH = os.path.join(BASE_DIR, "insights")
@@ -80,7 +82,14 @@ def convert_data_to_pytorch_tensors(X_train, y_train, X_validation, y_validation
     return X_train_tensor, train_dataset, train_loader, val_dataset, val_loader
 
 
-def train_model(train_dataset, train_loader, val_dataset, val_loader, model):
+def train_model(
+    train_dataset,
+    train_loader,
+    val_dataset,
+    val_loader,
+    model,
+    apply_plot: bool = False,
+):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
@@ -153,28 +162,13 @@ def train_model(train_dataset, train_loader, val_dataset, val_loader, model):
     torch.save(model.state_dict(), MODEL_PATH)
     print(f"Model saved successfully to {MODEL_PATH}")
 
-    return train_losses, val_losses
+    if apply_plot:
+        plot_loss_functions(train_losses, val_losses)
+
+    return model
 
 
-def train_neural_network(X_train, y_train, X_validation, y_validation):
-    X_train_tensor, train_dataset, train_loader, val_dataset, val_loader = (
-        convert_data_to_pytorch_tensors(X_train, y_train, X_validation, y_validation)
-    )
-
-    # Initialize the model
-    input_dim = X_train_tensor.shape[1]  # Should be 18 based on our previous steps
-    model = ChessNN(input_size=input_dim, num_classes=3)
-
-    # ==========================================
-    # STEP 3: TRAINING LOOP & EARLY STOPPING
-    # ==========================================
-    train_losses, val_losses = train_model(
-        train_dataset, train_loader, val_dataset, val_loader, model
-    )
-
-    # ==========================================
-    # STEP 4: PLOT LOSSES & SAVE MODEL
-    # ==========================================
+def plot_loss_functions(train_losses, val_losses):
     plt.figure(figsize=(10, 6))
     plt.plot(train_losses, label="Training Loss", color="blue")
     plt.plot(val_losses, label="Validation Loss", color="red")
@@ -185,3 +179,22 @@ def train_neural_network(X_train, y_train, X_validation, y_validation):
     plt.grid(True, alpha=0.3)
     plt.show()
     plt.savefig(LOSS_CURVES_PATH)
+
+
+def train_neural_network(
+    X_train, y_train, X_validation, y_validation, apply_plot: bool = False
+):
+    X_train_tensor, train_dataset, train_loader, val_dataset, val_loader = (
+        convert_data_to_pytorch_tensors(X_train, y_train, X_validation, y_validation)
+    )
+    input_dim = X_train_tensor.shape[1]  # Should be 18 based on our previous steps
+    model = ChessNN(input_size=input_dim, num_classes=3)
+    model = train_model(
+        train_dataset,
+        train_loader,
+        val_dataset,
+        val_loader,
+        model,
+        apply_plot=apply_plot,
+    )
+    return model

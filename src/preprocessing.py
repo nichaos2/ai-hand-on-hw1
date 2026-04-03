@@ -13,6 +13,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATASET_PATH = os.path.join(BASE_DIR, "data", "dataset.csv")
 SCALER_PATH = os.path.join(BASE_DIR, "models", "scaler.pkl")
 
+np.random.seed(42)
+
 
 def load_data() -> pd.DataFrame:
     """Loads the CSV and performs initial 'raw' target conversion."""

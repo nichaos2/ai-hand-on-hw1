@@ -14,6 +14,9 @@ INSIGHTS_PATH = os.path.join(BASE_DIR, "insights")
 PCA_FEATURES_PATH = os.path.join(INSIGHTS_PATH, "pca_features.txt")
 
 
+np.random.seed(42)
+
+
 def run_pca_exploration(X_train_scaled, y_train_enc):
     # 1. Fit PCA on the entire scaled training set
     # We don't limit n_components because we want to see the full variance

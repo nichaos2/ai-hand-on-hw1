@@ -314,4 +314,49 @@ While dropout (p=0.2) was applied, it was insufficient to prevent this memorizat
 
 ## 7. Best Model Designation
 
+The table bellow show the comparion between the XGBoost and the Neural network side by side.
+
+| Metric    | XGBoost | Neural Network |
+| --------- | ------- | ------ |
+|Accuracy	| 0.6012  |	0.6181 |
+|Precision	| 0.6039  |	0.5896 |
+|Recall		| 0.6012  |	0.6181 |
+|F1-score	| 0.5867  |	0.6033 |
+|ROC-AUC	| 0.6802  |	0.7151 |
+
+The image below shows the confusion matrices for the XGBoost (left with blues) and for the Neural Network (rigth with reds)/
+
+<img src="./images/confusion_matrix.png" style="width:700px"/>
+
+The Neural Network slightly outperforms the XGBoost model on the majority of metrics, achieving a higher Accuracy (0.6181 vs 0.6012), Recall, F1-score, and ROC-AUC, though XGBoost maintains a slight edge in Precision (0.6039 vs 0.5896). As shown in the confusion matrices, the Neural Network's better accuracy stems from a stronger ability to correctly classify Black wins (594 compared to XGBoost's 517), whereas XGBoost was slightly better at identifying White wins (687 vs 646). Crucially, both models succumbed to severe class imbalance, effectively failing to predict the minority "Draw" class; the Neural Network predicted 0 Draws, while XGBoost managed only 2.
+
+Despite the Neural Network's marginal statistical victory, its training loss curves show that validation loss stopped improving almost immediately. This suggests that while the model had enough data to extract the available signal quickly, it could not generalize further and immediately began overfitting the tabular noise.
+
+In contrast, the classical XGBoost model's decision logic provides excellent interpretability; its top features (such as rating_advantage and time-based proxies like turns) are entirely consistent with the dominant PCA loadings observed in Task 2.
+
+Ultimately, the $\sim1.7\%$ accuracy difference is not large enough to justify the added complexity of a deep learning architecture. Given the Neural Network's immediate overfitting, lower precision, complete failure on the minority class, and lack of feature transparency, the **classical XGBoost** is designated as the best and most practical model for this dataset.
+
+
 ## 8. Installation and Execution
+
+Prerequisites:
+- Python 3.12
+- pip
+
+1. Create virtual environment:
+`python -n venv venv`
+
+2. Activate the virtual environment: 
+- *nux system `source venv/bin/activate`
+- windows `venv\Scripts\activate`
+
+3. Install libraries:
+`pip install -r requirements.txt`
+
+4. Run the code:
+`python main.py`
+
+
+### Tweaking the code:
+
+- `apply_plot` in `main.py` is to be set by default to `False`; set to `True` in order to plot the loss curves when training the neural network.
