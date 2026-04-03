@@ -44,7 +44,7 @@ _Note_: the columns notes above are dropped during the loading of teh dataset. T
 
 ## 3. Preprocessing Approach
 
-### Splitting the data
+### 3.1 Splitting the data
 
 We split the with the 80/10/10 approach.
 - we drop the target column winner from the df
@@ -59,7 +59,7 @@ The results for the splitting process are as follows
 | Validation set| 2006 rows (10%) | 4.74% | 
 | Test set      | 2006 rows (10%) | 4.74%|
 
-### Missing values
+### 3.2 Missing values
 
 Although the dataset we are using does not have missing values we need to create an actual strategy to handle it,
 in case the dataset we will use in the future has missing values.
@@ -81,7 +81,7 @@ _Notes_:
         df[cat_cols] = df[cat_cols].astype("object")
     ```
 
-### Outlier Detection and Treatment
+### 3.3 Outlier Detection and Treatment
 
 We adopt the IQR method since it is more appropriate for the data, as they are not uniformly distributed (bell curve).
 
@@ -95,7 +95,7 @@ The numerical features "*created_at*" and "*last_move_at*" are not treated in th
 
 After the detection of the outliers we "Winsorize" the outliers rather than remove them. We follow this strategy as  to preserve the integrity of the Validation and Test sets. In a real-world scenario, if a user inputs a highly unusual 250-turn game, the model cannot simply 'drop' the user's request; it should provide a prediction. By capping, we train the model to treat extreme outliers as simply 'very high' values without allowing them to distort the mathematical weights of the Neural Network.
 
-### Encoding Categorical Variables
+### 3.4 Encoding Categorical Variables
 
 The encoding method depends on the nature of the categorical variables:
 - rated: boolean (True-False)
@@ -105,17 +105,17 @@ The encoding method depends on the nature of the categorical variables:
 - opening_eco: high cardinality 
 - opening_name: high cardinality
 
-#### One-hot encoding
+#### 3.4.1 One-hot encoding
 
 Ideal for the target which has values "white", "black" and "draw".
 
 Because it is in the target, the output from the encoding process will give as an array of 0s 1s and 2s.
 
-#### Label encoding
+#### 3.4.2 Label encoding
 
 Ideal for the rated, which is True or False, so it will be 1 or 0.
 
-#### Target endoding
+#### 3.4.3 Target endoding
 
 Target encoding basically calculates a possibility based on the target, so we will have 3 new columns for each categorical features with high cardinality. So after the encoding we have 16 columns.
 
@@ -128,7 +128,7 @@ _Note 1_ : This could be a good time to break the feature "*increament_code*" in
 _Note 2_: the features "*opening_name*" and "*opening_eco*" have conceptually high correlation; e.g. the value D10 of the opening eco always related to the opening name "Slav defence" + some variation. However, there might be a case where opening name "Slav defence" + some other variation, does not relate to D10. (ecos and names are just for example). It might seem that we could drop one of those features as it does not give much more info. This is a coming topic on the PCA analysis.
 
 
-## 4. Feature Engineering
+## 4.A (3.5) Feature Engineering
 
 The two features that can encode domain knowledge is the duration of a game and the difference between rated player.
 
@@ -140,13 +140,16 @@ _Note_: due to the early format of the output in the dataset, in some rows, the 
 _Note 2_: however the duration can be more precisely "guessed" at the preprocessing by looking at the feature "increment_code", because a "5+2" game would have a duration of 5-8 minutes (median) and a "10+5" game probably a duration of 11-15. So it would be advantageous to have a median grouped by the feature "increment_code" and then drop the feature. This step takes place before encoding the categorical features. This step can be done before the encoding in our case.
 
 
-## 5. Feature Scaling
+### 4.B (3.6) Feature Scaling
 
 The basic idea of the scaling is normalizing ratings (which range from 800 to 2700), and the date related features "created_at" and "last_move_at" so the Neural Network doesn't get overwhelmed by large numbers.
 
 We select the `StandardScaler` to scale the numerical features, because we already treated our extreme outliers using the IQR capping method (Winsorization) in the previous step. Thus, a `RobustScaler` is no longer necessary. The `StandardScaler` transforms the features to have a mean of 0 and a standard deviation of 1 using the formula $z = \frac{x - \mu}{\sigma}$. This is the preferred method for Neural Networks, ensuring that massively scaled columns like created_at or white_rating do not artificially dominate smaller scaled columns like "turns" or "opening_ply".
 
-## 6. PCA Insights
+
+_Note_: the numbering in the README file asked in the exercise and the numbering in the description of part 2 of the exercise do not coincide, so we keep the basic numbering of the README which is 4 for the Feature "Engineering" and add in parenthesis what it should be by the exercise description (kind-of 3 instead of 2). This is the same for the next section PCA Insights.
+
+## 5. (3.7) PCA Insights
 
 We run a PCA Analysis with the purpose of understanding which features carry the most information and how much variance each principal component explains. 
 
@@ -154,15 +157,15 @@ To this end, as the goal here is not to reduce dimensions for modelling, the cod
 
 When the `main.py` run after the preprocessing, two images and one text file are produced in the images folder (not coherent as a text file is in there too, but it will do for the analysis). The results from the images and the text file are commneted in the following sections
 
-### Scree plot
+### 5.1 Scree plot
 
 <img src="./images/scree_plot.png" style="width:700px"/>
 
 As we see in the image of the file "/images/scree_plot.png", the scree plot reveals that the dataset's variance is relatively distributed across multiple dimensions. It requires 6 principal components to capture 90% of the total cumulative variance. This indicates that a chess game is a complex, multi-dimensional event; the data cannot be aggressively compressed into just 2 or 3 features without losing highly significant information.
 
-### PCA loadings
+### 5.2 PCA loadings
 
-The content in the file /images/pca_features.txt reveals the number of components needed to explain 90% of variance which are 6 in our case.
+The content in the file "*/insights/pca_features.txt*" reveals the number of components needed to explain 90% of variance which are 6 in our case.
 
 Top Features driving Principal Component 1 (PC1)
 
@@ -188,15 +191,57 @@ By inspecting the component weights (loadings), we can interpret the real-world 
 - PC2 is driven by the exact same set of features, but with a slightly heavier emphasis on the ratings over the timestamps.
 - The fact that the highly correlated timestamps dominated the primary axes of variance validates our earlier feature engineering decision to extract game_duration_mins. In a strict dimensionality reduction scenario, the raw timestamps would likely be dropped to prevent them from overwhelming the principal components.
 
-### PC1 - PC2 scatter plot
+### 5.3 PC1 - PC2 scatter plot
 
 <img src="./images/scatter_plot.png" style="height:500px"/>
 
 The data was projected onto a 2D scatter plot using PC1 and PC2, colored by the target class (Winner). The plot in the file "image/scatter_plot.png" displays a dense, heavily overlapping cloud of data points with no distinct clusters or linear boundaries between the classes. Because PC1 and PC2 primarily represent the duration of the game and Skill Level (Rating) of the players which are factors that dictate the environment of the game rather than the outcome, it is mathematically logical that they do not perfectly separate the winner. This confirms that predicting the outcome of a chess game is a highly non-linear classification problem that will require an algorithm capable of learning complex, higher-dimensional interactions (such as a Random Forest or Neural Network).
 
 
-## 7. Model Comparison
+## 6. Model Comparison
 
-## 8. Best Model Designation
+### 6.1 Classical ML
 
-## 9. Installation and Execution
+The PCA plot shows a massive, overlapping cloud. Linear models will fail to draw straight lines through that mess.
+
+We choose the XGBoost which is the model that is the most used and also can implement an early stopping. XGBoost is not in the scikit-learn library so we install the xgboost library: `pip install xgboost`.
+
+The outcome of the model training stats are in the file "*insights/classical_model_report.txt*", and are presented below.
+
+Validation Accuracy: 0.6157
+
+Classification Report:
+|                  | precision | recall | f1-score |  support |
+| --------------   | ---- | ---- | ---- | ---- |
+| 0                | 0.62 | 0.56 | 0.59 |  911 |
+| 1                | 0.00 | 0.00 | 0.00 |   95 |
+| 2                | 0.61 | 0.73 | 0.66 | 1000 |
+|                  |      |      |      |      |
+|  **accuracy**    |      |      | 0.62 | 2006 |
+| **macro avg**    | 0.41 | 0.43 | 0.42 | 2006 |
+| **weighted avg** | 0.59 | 0.62 | 0.60 | 2006 |
+
+Top Features driving Principal Component 1 (PC1) 
+
+| Feature              | Importance |
+| -------------------- | -----------|
+| (7)  rating_advantage  |  0.200694 |
+| (16)    opening_name_1  |  0.164284 |
+| (17)    opening_name_2  |  0.129472 |
+| (15)    opening_name_0  |  0.119262 |
+| (3)             turns  |  0.063530 |
+
+Classical Machine Learning Model
+
+- Problem type: Multiclass classification (0=Black Win, 1=Draw, 2=White Win).
+
+- Model chosen: XGBClassifier with n_estimators=500, max_depth=6, and early_stopping_rounds=20. XGBoost was selected because the PCA scatter plot indicated highly non-linear class overlap, requiring a complex tree-based ensemble.
+
+- Validation performance: Accuracy on X_validation was 0.6157 (61.57%). Early stopping was triggered at iteration 29. Notably, the model struggled to optimize overall accuracy with severe class imbalance, due to the "Draw" class, which is only a $4.7 %$ of the games, achieving an F1-score of 0.00 on this minority.
+
+Feature importance: Top features driving the model were "rating_advantage" (0.20), followed by the target-encoded opening probabilities ("opening_name_1", "opening_name_2", "opening_name_0"), and "turns".
+
+
+## 7. Best Model Designation
+
+## 8. Installation and Execution

@@ -10,7 +10,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 IMAGE_PATH = os.path.join(BASE_DIR, "images")
 SCREE_PLOT_PATH = os.path.join(IMAGE_PATH, "scree_plot.png")
 SCATTER_PLOT_PATH = os.path.join(IMAGE_PATH, "scatter_plot.png")
-PCA_FEATURES_PATH = os.path.join(IMAGE_PATH, "pca_features.txt")
+INSIGHTS_PATH = os.path.join(BASE_DIR, "insights")
+PCA_FEATURES_PATH = os.path.join(INSIGHTS_PATH, "pca_features.txt")
 
 
 def run_pca_exploration(X_train_scaled, y_train_enc):
