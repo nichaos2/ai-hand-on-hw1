@@ -241,6 +241,76 @@ Classical Machine Learning Model
 
 Feature importance: Top features driving the model were "rating_advantage" (0.20), followed by the target-encoded opening probabilities ("opening_name_1", "opening_name_2", "opening_name_0"), and "turns".
 
+### 6.2 Neural network
+
+For the neural network we use the recommended library pytorch; to install it use `pip install torch`.
+
+#### Summary
+
+- Architecture – Input(18) → Dense(64, ReLU) → Dropout(0.2) → Dense(32, ReLU) → Dropout(0.2) → Dense(3, Linear/CrossEntropy).
+- Training – Adam optimizer, multi-class cross-entropy loss, batch size 64, early stopping with patience=25 monitoring val_loss.
+- Validation performance – Best Val Loss on X_val: 0.7624 (reached at epoch 0, training stopped at epoch 25).
+- Observation – Immediate severe overfitting observed; validation loss increased steadily from the first epoch while training loss continued to decrease. Experimenting with a Tanh activation slowed the rate of divergence but did not prevent the overfitting.
+
+More explictily:
+
+- Architecture: A Feedforward Neural Network with 2 hidden layers (64 nodes -> 32 nodes). Dropout of 20% (0.2) was applied to both hidden layers to prevent the model from memorizing the training set.
+- Output Activation: Following PyTorch best practices for numerical stability, raw logits were outputted and combined with nn.CrossEntropyLoss, which implicitly applies the required Softmax activation for multi-class prediction.
+- Early Stopping: Validation loss was monitored per epoch with a patience of 25. The model halted at epoch 25, restoring the weights that yielded the lowest validation loss to prevent overfitting from 0 epoch.
+
+#### Activation Function Experiment - Comparison between ReLU and Tanh activation functions
+
+- Run with ReLU activation function
+```bash
+Results:
+Starting Neural Network Training...
+Epoch   0 | Train Loss: 0.8048 | Val Loss: 0.7624
+Epoch   5 | Train Loss: 0.6920 | Val Loss: 0.7963
+Epoch  10 | Train Loss: 0.6745 | Val Loss: 0.8090
+Epoch  15 | Train Loss: 0.6683 | Val Loss: 0.8325
+Epoch  20 | Train Loss: 0.6634 | Val Loss: 0.8400
+Epoch  25 | Train Loss: 0.6622 | Val Loss: 0.8591
+```
+
+Base Model (ReLU):
+The model utilizing standard ReLU activations exhibited immediate overfitting. While training loss successfully decreased from 0.8048 to 0.6622, validation loss steadily increased from 0.7624 to 0.8591 over 25 epochs. Early stopping correctly identified Epoch 0 as the optimal generalization point (Val Loss: 0.7624).
+
+- Run with activation function Tanh
+```bash
+Starting Neural Network Training...
+Epoch   0 | Train Loss: 0.7697 | Val Loss: 0.7646
+Epoch   5 | Train Loss: 0.6836 | Val Loss: 0.8156
+Epoch  10 | Train Loss: 0.6777 | Val Loss: 0.8275
+Epoch  15 | Train Loss: 0.6726 | Val Loss: 0.8177
+Epoch  20 | Train Loss: 0.6742 | Val Loss: 0.8217
+Epoch  25 | Train Loss: 0.6731 | Val Loss: 0.8159
+```
+
+Experiment (Tanh):
+To evaluate the impact of different non-linearities, the architecture was tested using the Tanh activation function.
+
+Training Behavior: Tanh exhibited the exact same immediate overfitting pattern as ReLU. However, Tanh's validation loss climbed at a slower rate, reaching 0.8159 by epoch 25 compared to ReLU's 0.8591. This is likely because Tanh's bounding property (-1 to 1) prevented the network's output logits from diverging as rapidly as the unbounded ReLU.
+
+Validation Performance: Despite the slower divergence, Tanh failed to improve the network's actual predictive power. Its best validation loss (0.7646 at Epoch 0) was practically identical to the ReLU baseline.
+
+Conclusion: Changing the activation function did not resolve the network's tendency to overfit this specific tabular dataset. The network's high capacity caused it to memorize noise, confirming that simpler, tree-based models like XGBoost are better suited for this specific feature space.
+
+#### Learning Curves Plot  
+
+<img src="./images/loss_curves_p02.png" style="width:600px"/>
+
+Learning Curve Analysis (ReLU Base Model)
+
+The plotted learning curves vividly illustrate the network's training dynamics and confirm the severe overfitting.
+
+- Training Performance: The training loss (blue) decreases smoothly and consistently, indicating that the Adam optimizer is successfully minimizing error and the network is actively learning the training set.
+
+- Validation Performance: The validation loss (red) reaches its global minimum at the very first epoch and diverges immediately, trending steadily upward for the remainder of the 25 epochs.
+
+The growing gap between the two curves demonstrates that the network's capacity is too high for this specific tabular dataset. Rather than learning generalizable patterns to predict chess outcomes, the network immediately began memorizing the specific noise and quirks of the training data.
+
+While dropout (p=0.2) was applied, it was insufficient to prevent this memorization. The early stopping mechanism functioned exactly as intended, halting training and correctly identifying Epoch 0 as the optimal set of weights before the overfitting degradation began. Notably, thing do not get better for dropout at 0.6, which was tested as an experiment (see file iamges/loss_curves_p06.png)
+
 
 ## 7. Best Model Designation
 

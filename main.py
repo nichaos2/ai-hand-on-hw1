@@ -1,8 +1,7 @@
 # Entry point : runs the full pipeline
 
-from src.pca_analysis import run_pca_exploration
 from src.preprocessing import preprocess
-from src.train_classical import train_classical_model
+from src.train_neural import train_neural_network
 
 if __name__ == "__main__":
     print("-" * 10)
@@ -12,9 +11,11 @@ if __name__ == "__main__":
     print("-" * 10)
 
     # PCA analysis
-    run_pca_exploration(X_train, y_train)
+    # run_pca_exploration(X_train, y_train)
 
     # train classical model
-    classical_model, feature_importances = train_classical_model(
-        X_train, y_train, X_validation, y_validation
-    )
+    # classical_model, feature_importances = train_classical_model(
+    #     X_train, y_train, X_validation, y_validation
+    # )
+
+    train_neural_network(X_train, y_train, X_validation, y_validation)
