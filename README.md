@@ -375,7 +375,7 @@ Use the command `python main.py`
 ## FastAPI
 
 - Run the server locally with the following command:
-    - `uvicorn api:app --host 0.0.0.0 --port 8000`
+    - `uvicorn src.api:app --host 0.0.0.0 --port 8000`
 - Browse to the `http://127.0.0.1:8000/docs` where you see the endpoint:
     - `POST /predict`
 
