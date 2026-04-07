@@ -3,9 +3,24 @@
 
 ## 1. Problem Description
 
-Predict the winner of a chess game.
+Train a model to predict the winner of a chess game given the following inputs:
+
+- rated
+- created_at
+- last_move_at
+- turns
+- increment_code
+- white_rating
+- black_rating
+- opening_eco
+- opening_name
+- opening_ply
+
+See the meaning of the inputs in the Section "Dataset Description."
 
 ## 2. Dataset Description
+
+For the training of the model the following dataset is used:
 
 - Domain: Chess
 - Source [URL](https://wwwkagglecom/datasets/datasnaek/chess)
@@ -339,24 +354,19 @@ Ultimately, the $\sim1.7\%$ accuracy difference is not large enough to justify t
 
 ## 8. Installation and Execution
 
-Prerequisites:
-- Python 3.12
-- pip
+- Prerequisites:
+    - Python 3.12
+    - pip
 
-1. Create virtual environment:
-`python -n venv venv`
+- Install dependencies
+    1. Create virtual environment: `python -m venv venv`
+    2. Activate the virtual environment: 
+        - *nux system `source venv/bin/activate`
+        - windows `venv\Scripts\activate`
+    3. Install libraries: `pip install -r requirements.txt`
 
-2. Activate the virtual environment: 
-- *nux system `source venv/bin/activate`
-- windows `venv\Scripts\activate`
-
-3. Install libraries:
-`pip install -r requirements.txt`
-
-4. Run the code:
-`python main_pipeline.py`
-
-_Note_: we change the `main.py` we have in the assignment description to `main_pipeline.py` 
+- Run the pipeline
+Use the command `python main.py`
 
 ### Tweaking the code:
 
@@ -364,18 +374,10 @@ _Note_: we change the `main.py` we have in the assignment description to `main_p
 
 ## FastAPI
 
-In order for the API to run and to debug smoothly in VSCode, the script  `main.py` now serves the needs for the local development server and instead of `main.py` for the pipeline we have the script `main_pipeline.py`
+- Run the server locally with the following command:
+    - `uvicorn api:app --host 0.0.0.0 --port 8000`
+- Browse to the `http://127.0.0.1:8000/docs` where you see the endpoint:
+    - `POST /predict`
 
-For the needs of running the endpoint we save the target_encoder at the preprocessing step.
+_Note_: For the needs of running the endpoint we add a save point for the target_encoder at the preprocessing step.
 
-### Execution
-
-You can run the server locally with the following commands:
-
-- `fastapi dev`
-or
-- `uvicorn main:app --host 0.0.0.0 --port 8000`
-
-Browse to the `http://127.0.0.1:8000/docs` where you see the endpoint
-
-`POST /predict` and give the calues in the body.
