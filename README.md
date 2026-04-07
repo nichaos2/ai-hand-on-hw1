@@ -119,7 +119,7 @@ Ideal for the rated, which is True or False, so it will be 1 or 0.
 
 Target encoding basically calculates a possibility based on the target, so we will have 3 new columns for each categorical features with high cardinality. So after the encoding we have 16 columns.
 
-Problems to overcome with the Targer encoding: overfitting, never seen categories in new datasets. 
+Problems to overcome with the Target encoding: overfitting, never seen categories in new datasets. 
 
 We use the `TargetEncoder` class of the `scikit-learn` library. A very good description of how the class works can be found [here](https://towardsdatascience.com/encoding-categorical-variables-a-deep-dive-into-target-encoding-2862217c2753/). `scikit-learn` and `feature-engine` can automatically detect the optimal smoothing parameter using empirical Bayes variance estimates. To avoid data leakage we use `shuffle` and thus we set the `random_state` parameter to 42, as specified in the exercise.
 
@@ -153,9 +153,9 @@ _Note_: the numbering in the README file asked in the exercise and the numbering
 
 We run a PCA Analysis with the purpose of understanding which features carry the most information and how much variance each principal component explains. 
 
-To this end, as the goal here is not to reduce dimensions for modelling, the code for PCA analysis is not in the code `preprocessing.py` but a standalone script in the `src` folder `pca_analysis.py`.
+To this end, as the goal here is not to reduce dimensions for modelling, the code for PCA analysis is not in the code `preprocessing.py` but a standalone script in the `src` folder `pca_analysis.py` and it is called after the preprocessing.
 
-When the `main.py` run after the preprocessing, two images and one text file are produced in the images folder (not coherent as a text file is in there too, but it will do for the analysis). The results from the images and the text file are commneted in the following sections
+Two images and one text file are produced in the folders images and insights respecticely. The results from the images and the text file are commented in the following sections
 
 ### 5.1 Scree plot
 
@@ -354,9 +354,28 @@ Prerequisites:
 `pip install -r requirements.txt`
 
 4. Run the code:
-`python main.py`
+`python main_pipeline.py`
 
+_Note_: we change the `main.py` we have in the assignment description to `main_pipeline.py` 
 
 ### Tweaking the code:
 
-- `apply_plot` in `main.py` is to be set by default to `False`; set to `True` in order to plot the loss curves when training the neural network.
+- `apply_plot` in `main.py` is to be set by default to `True`; set to `False` in order to not plot the loss curves when training the neural network.
+
+## FastAPI
+
+In order for the API to run and to debug smoothly in VSCode, the script  `main.py` now serves the needs for the local development server and instead of `main.py` for the pipeline we have the script `main_pipeline.py`
+
+For the needs of running the endpoint we save the target_encoder at the preprocessing step.
+
+### Execution
+
+You can run the server locally with the following commands:
+
+- `fastapi dev`
+or
+- `uvicorn main:app --host 0.0.0.0 --port 8000`
+
+Browse to the `http://127.0.0.1:8000/docs` where you see the endpoint
+
+`POST /predict` and give the calues in the body.
