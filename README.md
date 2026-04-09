@@ -174,7 +174,7 @@ Two images and one text file are produced in the folders images and insights res
 
 ### 5.1 Scree plot
 
-<img src="./images/scree_plot.png" style="width:700px"/>
+<img src="./images/scree_plot.png" style="width:750px"/>
 
 As we see in the image of the file "/images/scree_plot.png", the scree plot reveals that the dataset's variance is relatively distributed across multiple dimensions. It requires 6 principal components to capture 90% of the total cumulative variance. This indicates that a chess game is a complex, multi-dimensional event; the data cannot be aggressively compressed into just 2 or 3 features without losing highly significant information.
 
@@ -208,7 +208,7 @@ By inspecting the component weights (loadings), we can interpret the real-world 
 
 ### 5.3 PC1 - PC2 scatter plot
 
-<img src="./images/scatter_plot.png" style="height:500px"/>
+<img src="./images/scatter_plot.png" style="height:550px"/>
 
 The data was projected onto a 2D scatter plot using PC1 and PC2, colored by the target class (Winner). The plot in the file "image/scatter_plot.png" displays a dense, heavily overlapping cloud of data points with no distinct clusters or linear boundaries between the classes. Because PC1 and PC2 primarily represent the duration of the game and Skill Level (Rating) of the players which are factors that dictate the environment of the game rather than the outcome, it is mathematically logical that they do not perfectly separate the winner. This confirms that predicting the outcome of a chess game is a highly non-linear classification problem that will require an algorithm capable of learning complex, higher-dimensional interactions (such as a Random Forest or Neural Network).
 
@@ -312,7 +312,7 @@ Conclusion: Changing the activation function did not resolve the network's tende
 
 #### Learning Curves Plot  
 
-<img src="./images/loss_curves_p02.png" style="width:600px"/>
+<img src="./images/loss_curves_p02.png" style="width:700px"/>
 
 Learning Curve Analysis (ReLU Base Model)
 
@@ -339,9 +339,9 @@ The table bellow show the comparion between the XGBoost and the Neural network s
 |F1-score	| 0.5867  |	0.6033 |
 |ROC-AUC	| 0.6802  |	0.7151 |
 
-The image below shows the confusion matrices for the XGBoost (left with blues) and for the Neural Network (rigth with reds)/
+The image below shows the confusion matrices for the XGBoost (left with blues) and for the Neural Network (right with reds)
 
-<img src="./images/confusion_matrix.png" style="width:700px"/>
+<img src="./images/confusion_matrix.png" style="width:760px"/>
 
 The Neural Network slightly outperforms the XGBoost model on the majority of metrics, achieving a higher Accuracy (0.6181 vs 0.6012), Recall, F1-score, and ROC-AUC, though XGBoost maintains a slight edge in Precision (0.6039 vs 0.5896). As shown in the confusion matrices, the Neural Network's better accuracy stems from a stronger ability to correctly classify Black wins (594 compared to XGBoost's 517), whereas XGBoost was slightly better at identifying White wins (687 vs 646). Crucially, both models succumbed to severe class imbalance, effectively failing to predict the minority "Draw" class; the Neural Network predicted 0 Draws, while XGBoost managed only 2.
 
