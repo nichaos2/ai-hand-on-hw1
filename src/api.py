@@ -60,27 +60,22 @@ def predict_outcome(match_data: ChessMatchInput):
         # Convert JSON to a Pandas DataFrame
         input_dict = match_data.model_dump()
         input_df = pd.DataFrame([input_dict])
-        print("df  from body")
-        print(input_df)
-
-        input_df_, _, _ = engineer_domain_features(input_df, None, None)
-        print("df from adding features")
-        print(input_df_)
+        input_df, _, _ = engineer_domain_features(input_df, None, None)
 
         # encode_categories
         ## binary
-        input_df_["rated"] = input_df_["rated"].astype(int)
+        input_df["rated"] = input_df["rated"].astype(int)
         high_cardinality_features = ["increment_code", "opening_eco", "opening_name"]
 
         # Transform the text strings into their historical numerical averages
         # we do not pass 'y' here. The encoder uses its saved memory.
         new_col_names = target_encoder.get_feature_names_out(high_cardinality_features)
-        encoded_data = target_encoder.transform(input_df_[high_cardinality_features])
+        encoded_data = target_encoder.transform(input_df[high_cardinality_features])
         encoded_df = pd.DataFrame(
-            encoded_data, columns=new_col_names, index=input_df_.index
+            encoded_data, columns=new_col_names, index=input_df.index
         )
-        input_df_ = input_df_.drop(columns=high_cardinality_features)
-        input_df_ = pd.concat([input_df_, encoded_df], axis=1)
+        input_df = input_df.drop(columns=high_cardinality_features)
+        input_df = pd.concat([input_df, encoded_df], axis=1)
 
         # --- SCALING ---
         # Ensure input_df_ columns exactly match what the scaler expects
@@ -94,7 +89,7 @@ def predict_outcome(match_data: ChessMatchInput):
             "rating_advantage",
             "game_duration_mins",
         ]
-        input_df_[cols_to_scale] = scaler.transform(input_df_[cols_to_scale])
+        input_df[cols_to_scale] = scaler.transform(input_df[cols_to_scale])
 
         # XGBoost is strict and need columns in specific order
         expected_columns = [
@@ -119,12 +114,24 @@ def predict_outcome(match_data: ChessMatchInput):
         ]
 
         # --- PREDICTION ---
-        input_df_ = input_df_[expected_columns]
-        prediction_num = best_model.predict(input_df_)[0]
-        class_mapping = {0: "Black Wins", 1: "Draw", 2: "White Wins"}
+        input_df = input_df[expected_columns]
+        prediction = best_model.predict(input_df)
+        prediction_num = int(prediction[0])
+        class_mapping = {0: "Black", 1: "Draw", 2: "White"}
+
+        # --- PROBABILITIES ---
+        probabilities = best_model.predict_proba(input_df)[0]
+        confidence_scores = {
+            "Black": round(float(probabilities[0]), 4),
+            "Draw": round(float(probabilities[1]), 4),
+            "White": round(float(probabilities[2]), 4),
+        }
+
         return {
             "status": "success",
-            "predicted_outcome": class_mapping.get(int(prediction_num), "Unknown"),
+            "prediction": int(prediction_num),
+            "label": class_mapping.get(prediction_num, "unknown"),
+            "probability": confidence_scores,
         }
 
     except Exception as e:
