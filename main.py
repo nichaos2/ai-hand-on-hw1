@@ -6,6 +6,9 @@ from src.preprocessing import preprocess
 from src.train_classical import train_classical_model
 from src.train_neural import train_neural_network
 
+# Default to False; set to True for Hyperparmeter Tuning of the XGBoost model
+XGBOOST_TUNING = False
+
 if __name__ == "__main__":
     print("START OD PIPELINE")
     print("-" * 10)
@@ -20,7 +23,7 @@ if __name__ == "__main__":
     print("-" * 10)
     print("Train the classical ML model")
     classical_model, feature_importances = train_classical_model(
-        X_train, y_train, X_validation, y_validation
+        X_train, y_train, X_validation, y_validation, XGBOOST_TUNING, X_test, y_test
     )
     print("End training the classical ML model")
     print("-" * 10)

@@ -1,0 +1,12 @@
+HYPERPARAMETER TUNING RESULTS
+Search space
+learning_rate: [0.01, 0.05, 0.1, 0.2]
+n_estimators: [100, 200, 300, 500]
+max_depth: [3, 5, 6, 10, None]
+min_child_weight: [1, 2, 5, 10]
+subsample: [0.6, 0.8, 1.0]
+colsample_bytree: [0.6, 0.8, 1.0]
+Result - Best params: {'subsample': 1.0, 'n_estimators': 300, 'min_child_weight': 10, 'max_depth': 6, 'learning_rate': 0.2, 'colsample_bytree': 0.6}
+----------------------------------------
+Validation confirmation - ROC-AUC on X_val: 0.6943 (baseline) -> 0.6887 (tuned)
+Test set improvement    - ROC-AUC on X_test: 0.6802 (baseline) -> 0.6835 (tuned)

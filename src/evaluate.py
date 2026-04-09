@@ -22,26 +22,24 @@ CONFUSION_MATRIX_PLOT_PATH = os.path.join(IMAGE_PATH, "confusion_matrix.png")
 torch.manual_seed(42)
 
 
-def evaluate_final_models(xgb_model, nn_model, X_test_scaled, y_test_enc):
+def evaluate_final_models(xgb_model, nn_model, X_test, y_test):
     # ==========================================
     # XGBOOST EVALUATION
     # ==========================================
-    xgb_preds = xgb_model.predict(X_test_scaled)
-    xgb_probs = xgb_model.predict_proba(X_test_scaled)
+    xgb_preds = xgb_model.predict(X_test)
+    xgb_probs = xgb_model.predict_proba(X_test)
 
-    xgb_acc = accuracy_score(y_test_enc, xgb_preds)
+    xgb_acc = accuracy_score(y_test, xgb_preds)
     xgb_prec, xgb_rec, xgb_f1, _ = precision_recall_fscore_support(
-        y_test_enc, xgb_preds, average="weighted", zero_division=0
+        y_test, xgb_preds, average="weighted", zero_division=0
     )
-    xgb_roc = roc_auc_score(
-        y_test_enc, xgb_probs, multi_class="ovr", average="weighted"
-    )
+    xgb_roc = roc_auc_score(y_test, xgb_probs, multi_class="ovr", average="weighted")
 
     # ==========================================
     # NEURAL NETWORK EVALUATION
     # ==========================================
     # Convert test features to tensors (No need for y_test tensor!)
-    X_test_tensor = torch.tensor(X_test_scaled.values, dtype=torch.float32)
+    X_test_tensor = torch.tensor(X_test.values, dtype=torch.float32)
 
     nn_model.eval()  # Turn off dropout!
     with torch.no_grad():
@@ -51,11 +49,11 @@ def evaluate_final_models(xgb_model, nn_model, X_test_scaled, y_test_enc):
         nn_preds = torch.argmax(nn_logits, dim=1).numpy()
 
     # Evaluate NN predictions against the standard y_test_enc
-    nn_acc = accuracy_score(y_test_enc, nn_preds)
+    nn_acc = accuracy_score(y_test, nn_preds)
     nn_prec, nn_rec, nn_f1, _ = precision_recall_fscore_support(
-        y_test_enc, nn_preds, average="weighted", zero_division=0
+        y_test, nn_preds, average="weighted", zero_division=0
     )
-    nn_roc = roc_auc_score(y_test_enc, nn_probs, multi_class="ovr", average="weighted")
+    nn_roc = roc_auc_score(y_test, nn_probs, multi_class="ovr", average="weighted")
 
     # ==========================================
     # PRINT SIDE-BY-SIDE TABLE
@@ -76,14 +74,14 @@ def evaluate_final_models(xgb_model, nn_model, X_test_scaled, y_test_enc):
     # ==========================================
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-    cm_xgb = confusion_matrix(y_test_enc, xgb_preds)
+    cm_xgb = confusion_matrix(y_test, xgb_preds)
     disp_xgb = ConfusionMatrixDisplay(
         confusion_matrix=cm_xgb, display_labels=["Black", "Draw", "White"]
     )
     disp_xgb.plot(ax=axes[0], cmap="Blues", colorbar=False)
     axes[0].set_title("XGBoost Confusion Matrix")
 
-    cm_nn = confusion_matrix(y_test_enc, nn_preds)
+    cm_nn = confusion_matrix(y_test, nn_preds)
     disp_nn = ConfusionMatrixDisplay(
         confusion_matrix=cm_nn, display_labels=["Black", "Draw", "White"]
     )

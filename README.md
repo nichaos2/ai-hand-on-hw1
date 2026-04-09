@@ -250,7 +250,16 @@ Classical Machine Learning Model
 
 - Problem type: Multiclass classification (0=Black Win, 1=Draw, 2=White Win).
 
-- Model chosen: XGBClassifier with n_estimators=500, max_depth=6, and early_stopping_rounds=20. XGBoost was selected because the PCA scatter plot indicated highly non-linear class overlap, requiring a complex tree-based ensemble.
+The model XGBoost was selected because the PCA scatter plot indicated highly non-linear class overlap, requiring a complex tree-based ensemble.
+
+- Model chosen: XGBClassifier with the following parameters:
+- `n_estimators`=500,
+- `max_depth`=6
+- `learning_rate`=0.1
+- `objective`="multi:softprob"
+- `num_class`=3  # for 0 (Black), 1 (White), 2 (Draw)
+- `random_state`=42
+- `early_stopping_rounds`=20. 
 
 - Validation performance: Accuracy on X_validation was 0.6157 (61.57%). Early stopping was triggered at iteration 29. Notably, the model struggled to optimize overall accuracy with severe class imbalance, due to the "Draw" class, which is only a $4.7 %$ of the games, achieving an F1-score of 0.00 on this minority.
 
@@ -372,7 +381,7 @@ Use the command `python main.py`
 
 - `apply_plot` in `main.py` is to be set by default to `True`; set to `False` in order to not plot the loss curves when training the neural network.
 
-## FastAPI
+## 9. FastAPI Endpoint
 
 - Run the server locally with the following command:
     - `uvicorn src.api:app --host 0.0.0.0 --port 8000`
@@ -381,3 +390,71 @@ Use the command `python main.py`
 
 _Note_: For the needs of running the endpoint we add a save point for the target_encoder at the preprocessing step.
 
+
+## 10. Hyperparameter Tuning
+
+XGBoost is an ensemble of decision trees.
+
+We have limited compute power so we select the following parameters:
+- `learning_rate`; how fast the algorithm can learn
+- `n_estimators`; the number of the trees
+- `max_depth`; how deep the trees can "grow"
+- `min_child_weight`; defines the minimum sum of weights of observations required in a child
+- `subsample` and `colsample_bytree`; how much randomness is introduced in the model.
+
+The Serach space is the following:
+- `learning_rate`: [0.01, 0.05, 0.1, 0.2]
+- `n_estimators`: [100, 200, 300, 500]
+- `max_depth`: [3, 5, 6, 10, None]
+- `min_child_weight`: [1, 2, 5, 10]
+- `subsample`: [0.6, 0.8, 1.0]
+- `colsample_bytree`: [0.6, 0.8, 1.0].
+
+And the results for best parameters: 
+- `learning_rate`=0.2
+- `n_estimators`=300
+- `max_depth`=6
+- `min_child_weight`=10
+- `subsample`=1.0
+- `colsample_bytree`=0.6.
+- Validation confirmation – ROC-AUC on X_validation: 0.6943 (baseline) --> 0.6887 (tuned).
+- Test set improvement – ROC-AUC on X_test: 0.6802 (baseline) --> 0.6835 (tuned).
+
+The validation score dropped slightly, but your test score improved.  The randomized search successfully applied stricter regularization (like `min_child_weight`: 10 and `colsample_bytree`: 0.6), which stopped the model from memorizing the validation set and allowed it to generalize better to completely unseen data.
+
+### How to set 
+
+In `main.py` the global parameter `TUNING` is set to `False`. We set it to `True` only once to get the hyperparameters for the model.
+
+
+### More resources
+
+Some more resources on hyperpameter explanation and tuning exaples:
+- Hyperparameters described in [geeksforgeeks](https://www.geeksforgeeks.org/machine-learning/xgboost-parameters/)
+- Hyperparameter tuning step by step in[analytics vidya](https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/)
+- Bayesina optimization (not used here) in [kaggle guide](https://www.kaggle.com/code/prashant111/a-guide-on-xgboost-hyperparameters-tuning)
+
+An exhaustive parameter distribution from which to search the best model can be given from the following but since we have limited compyte power we choose only some of them. 
+
+```python
+    param_distributions = {
+    # 1. Core Tree Structure
+    'learning_rate': [0.01, 0.05, 0.1, 0.2],     # (eta) How fast the model learns
+    'max_depth': [3, 5, 7, 10],                  # Maximum depth of a tree
+    'max_leaves': [0, 15, 31, 63],               # (max_leaf_nodes) 0 means no limit. Great for deeper trees.
+    
+    # 2. Regularization & Pruning (Stopping Overfitting)
+    'min_child_weight': [1, 3, 5, 7],            # Minimum instances needed in a node to keep splitting
+    'gamma': [0, 0.1, 0.5, 1.0, 5.0],            # Minimum loss reduction required to make a further partition
+    'reg_lambda': [0.1, 1.0, 5.0, 10.0],         # (lambda) L2 regularization on weights
+    'reg_alpha': [0, 0.1, 1.0, 5.0],             # (alpha) L1 regularization on weights
+    
+    # 3. Handling Extreme Imbalance (Like your "Draw" class!)
+    'max_delta_step': [0, 1, 5, 10],             # Usually 0, but 1-10 helps models predict extreme minority classes
+    
+    # 4. Randomness / Noise Injection
+    'subsample': [0.6, 0.8, 1.0],                # % of rows used to build each tree
+    'colsample_bytree': [0.6, 0.8, 1.0],         # % of columns used to build each tree
+    'colsample_bylevel': [0.6, 0.8, 1.0]         # % of columns used at each depth level
+}
+```
